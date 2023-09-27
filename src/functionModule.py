@@ -21,11 +21,11 @@ def showDirectoryContent(directory, optionalParameter=None): #muestra en un form
     else:
         print(optionalParameter)
     try:
-        for i, item in enumerate(items):
-        if os.path.isdir(os.path.join(directory, item)):
-            print(f'   {i} - {colorCeleste}[D]{resetText}, item')
-        else:
-            print(f'   {i} - {inputText}[F]{resetText}, item')
+        for i, item in enumerate(os.listdir(directory)):
+            if os.path.isdir(os.path.join(directory, item)):
+                print(f'    {i} - {colorCeleste}[D]{resetText} {item}')
+            else:
+                print(f'    {i} - {inputText}[F]{resetText} {item}')
     except:
         input("Acceso denegado a carpeta. Pruebe aumentando los permisos con los que el programa corre . . . ")
 
@@ -216,3 +216,6 @@ def move(userCommand, optionalParameter=None):
     except:
         input("numero de indice invalido en el contexto actual o segundo parametro de direccion invalido.")
         return ""
+
+def copy(userCommand, optionalParameter=None):
+    pass
