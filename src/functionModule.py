@@ -1,6 +1,6 @@
 import os, shutil
 
-errorText, negritaText, inputText, resetText = "\033[91;4m", "\033[1m", "\033[1;33m", "\033[0m"
+errorText, negritaText, inputText, resetText, colorCeleste = "\033[91;4m", "\033[1m", "\033[1;33m", "\033[0m", "\033[1;36m"
 
 commands = [
     ['help', f'Mostrar la descripción de comandos disponibles junto a un ejemplo de uso. ________ {inputText}"help"{resetText}'],
@@ -21,7 +21,11 @@ def showDirectoryContent(directory, optionalParameter=None): #muestra en un form
     else:
         print(optionalParameter)
     try:
-        [print(f"   {i} - {item}")for i,item in enumerate(os.listdir(directory))]
+        for i, item in enumerate(items):
+        if os.path.isdir(os.path.join(directory, item)):
+            print(f'   {i} - {colorCeleste}[D]{resetText}, item')
+        else:
+            print(f'   {i} - {inputText}[F]{resetText}, item')
     except:
         input("Acceso denegado a carpeta. Pruebe aumentando los permisos con los que el programa corre . . . ")
 
