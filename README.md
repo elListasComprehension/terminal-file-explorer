@@ -1,4 +1,4 @@
-# 💾 explorador de archivos estilo terminal
+# explorador de archivos estilo terminal
 
 explorador de archvivos hecho en python para un proyecto de secundaria
 
