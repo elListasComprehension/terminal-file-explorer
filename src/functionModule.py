@@ -1,4 +1,4 @@
-import os, shutil
+import os, shutil, concurrent.futures
 
 errorText, negritaText, inputText, resetText, colorCeleste = "\033[91;4m", "\033[1m", "\033[1;33m", "\033[0m", "\033[1;36m"
 
@@ -15,19 +15,26 @@ commands = [
     ['exit', f'Salir del programa. {inputText}"exit"{resetText}']
 ]
 
-def showDirectoryContent(directory, optionalParameter=None): #muestra en un formato de lista con índices el contenido de archivos y carpetas 
+def showDirectoryContent(itemsList, optionalParameter=None): #muestra en un formato de lista con índices el contenido del directorio o lista que se le pase comoparámetro 
     if optionalParameter is None:
-        print(f"{negritaText}Current directory is: {directory}\n{resetText}")
+        print(f'{negritaText}Current directory is: {os.getcwd()}\n{resetText}')
     else:
         print(optionalParameter)
     try:
-        for i, item in enumerate(os.listdir(directory)):
-            if os.path.isdir(os.path.join(directory, item)):
-                print(f'    {i} - {colorCeleste}[D]{resetText} {item}')
-            else:
-                print(f'    {i} - {inputText}[F]{resetText} {item}')
+        if itemsList == os.listdir(os.getcwd()):
+            for i, item in enumerate(itemsList):
+                if os.path.isdir(os.path.join(os.getcwd(), item)):
+                    print(f'    {i} - {colorCeleste}[dir]{resetText} {item}')
+                else:
+                    print(f'    {i} - {inputText}[file]{resetText} {item}')
+        else:
+            for i, item in enumerate(itemsList):
+                if os.path.isdir(item):
+                    print(f'    {i} - {colorCeleste}[dir]{resetText} {item}')
+                else:
+                    print(f'    {i} - {inputText}[file]{resetText} {item}')
     except:
-        input("Acceso denegado a carpeta. Pruebe aumentando los permisos con los que el programa corre . . . ")
+        input(f'{errorText} Acceso denegado a directorio. Pruebe aumentando los permisos con los que el programa corre . . . {resetText}')
 
 def takeUserInput(indexedItemsList=None): # toma el input del usuario y le hace un filtrado inicial
     if indexedItemsList is None:
@@ -36,11 +43,11 @@ def takeUserInput(indexedItemsList=None): # toma el input del usuario y le hace 
     returnInput = returnInput.split(" ")
     if returnInput[0] not in [item[0] for item in commands]:
         try:
-            int(returnInput)
+            int(returnInput[0])
         except:
-            input(f"{errorText}{returnInput[0]} no se reconoce como un comando interno o externo, programa o archivo por lotes ejecutable . . . {resetText}")
+            input(f"'{errorText}{returnInput[0]}' no se reconoce como un comando interno o externo, programa o archivo por lotes ejecutable . . . {resetText}")
             return None
-        if int(returnInput) < 0 or int(returnInput) > (len(indexedItemsList)) - 1:
+        if int(returnInput[0]) < 0 or int(returnInput[0]) > (len(indexedItemsList)) - 1:
             input(f"{errorText}Número de índice ingresado fuera de rango en el contexto de directorio actual . . . {resetText}")
             return None
         else:
@@ -50,36 +57,36 @@ def takeUserInput(indexedItemsList=None): # toma el input del usuario y le hace 
 
 def detectCommand(userCommand, optionalParameter=None): #Enviar a función a partir de comandos
     try:
-        int(userCommand)
+        int(userCommand[0])
     except:
         if userCommand[0] == 'exit':
             pass
         else:
             exec(f"{userCommand[0]}({userCommand}, {optionalParameter})")
         return ""
-    fileIndexAccess(userCommand)
+    fileIndexAccess(userCommand, optionalParameter)
 
 def fileIndexAccess(userCommand, indexedItemsList=None, functionCalled=None): #usar número de índice para acceder
     if indexedItemsList is None:
         indexedItemsList = os.listdir(os.getcwd())
     if functionCalled is not None:
         if int(userCommand) < 0 or int(userCommand) > (len(indexedItemsList)) - 1:
-            input("")
+            input("error")
             return ""
         else:
             return indexedItemsList[int(userCommand)]
     else:
-        if '.' in indexedItemsList[int(userCommand)]:
+        if os.path.isfile(os.path.join(os.getcwd(), indexedItemsList[int(userCommand[0])])):
             try:
                 if indexedItemsList == os.listdir(os.getcwd()):
-                    os.startfile(f'{os.path.join(os.getcwd(), indexedItemsList[int(userCommand)])}')
+                    os.startfile(f'{os.path.join(os.getcwd(), indexedItemsList[int(userCommand[0])])}')
                 else:
                     os.startfile(f'{indexedItemsList[int(userCommand)]}')
             except:
                 input(f"{errorText}No se logró ejecutar el programa seleccionado . . . {resetText}")
         else:
             try:
-                os.chdir(indexedItemsList[int(userCommand)])
+                os.chdir(indexedItemsList[int(userCommand[0])])
             except:
                 input(f"{errorText}Acceso denegado a directorio. Pruebe aumentando los permisos con los que el programa corre . . . {resetText}")
 
@@ -125,48 +132,34 @@ def rename(userCommand, optionalParameter=None): # renombrar archivos en directo
     except:
         input(f"{errorText}No ha sido posible llevar a cabo el comando porque alguno de los parámetros ingresados no es válido")
 
+
 def search(userCommand, optionalParameter=None):
     if len(userCommand) < 2 or len(userCommand) > 2:
-        input("el comando search requiere un parametro para el filtro de busqueda")
-        return ""
-    
+        input("El comando 'search' requiere un parámetro conteniendo el filtro de búsqueda")
+        return None
+
     matches = []
     itemsRecorridos = 0
-    userInput = ""
 
-    for parent, directorios, archivos in os.walk(os.getcwd()):
-        itemsRecorridos += 1
-        os.system("cls")
-        print(f"Buscando en {itemsRecorridos} items . . . ")
-        for archivo in archivos:
-            if userCommand[1] in archivo:
-                pathCompleto = os.path.join(parent, archivo)
-                matches.append(pathCompleto)
-        for directorio in directorios:
-            if userCommand[1] in directorio:
-                pathCompleto = os.path.join(parent, directorio)
-                matches.append(pathCompleto)
+    def search_in_directory(parent, search_term):
+        local_matches = []
+        for root, dirs, files in os.walk(parent):
+            for file in files:
+                if search_term in file:
+                    path = os.path.join(root, file)
+                    local_matches.append(path)
+        return local_matches
 
-    while userInput != 'back':
-        os.system("cls")
-        print(f"\n\n('{inputText}back{resetText}' para salir del menú de resultados) Actualmente mostrando la dirección o las direcciones de archivos o directorios coincidentes con '{negritaText}{userCommand.split(' ')[1]}{resetText}':\n\n")
-        [print(f"{i} - {path}") for i, path in enumerate(matches)]
-        rawUserInput = takeUserInput(matches)
-        if rawUserInput is not None:
-            userInput = rawUserInput
-            try: 
-                int(userInput)
-            except:
-                if userInput is 'back':
-                    return ""
-                else:
-                    input("comando no valido en el contexto actual de navegacion de datos")
-            finally:
-                if (int(userInput) >= 0 and int(userInput) < len(matches)):
-                    fileIndexAccess(userCommand, matches)
-                    return ""
-                else:
-                    input("index fuera de rango de lista de resultados")
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        for parent, _, _ in os.walk(os.getcwd()):
+            itemsRecorridos += 1
+            os.system("cls")
+            print(f"Buscando en {itemsRecorridos} items . . . ")
+            future = executor.submit(search_in_directory, parent, userCommand[1])
+            matches.extend(future.result())
+
+    return matches
+
 
 def create(userCommand, optionalParameter=None):
     input(f'{userCommand} {len(userCommand)}')

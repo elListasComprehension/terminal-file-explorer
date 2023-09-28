@@ -10,7 +10,6 @@ manual de usuario: https://docs.google.com/document/d/1JlERBnCr5ed9yySsSNRMDKvBj
 
 el siguiente es el primer vistazo que uno tendrá del programa donde, tal como si fuese el explorador de archivos de Windows, este mostrará los diferentes elementos que existan dentro del directorio actual (current working directory o cwd).
 
-![image](https://github.com/elListasComprehension/terminal-file-explorer/assets/142759837/d224e6df-85a9-43d3-8c26-383a018acf67)
 
 
 el algoritmo consiste de un bucle de programa (que dura hasta que se ingrese la palabra reservada 'exit') que contiene la simple lógica que exige el ingreso del input del usuario y que existe dentro de un archivo main.py, el cual, además, importa las diferentes funciones del módulo functionModule.py como se ve en las siguientes imágenes.
