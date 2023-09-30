@@ -1,8 +1,10 @@
-import os, shutil, concurrent.futures
+import os, shutil, concurrent.futures, main
 
 errorText, negritaText, inputText, resetText, colorCeleste = "\033[91;4m", "\033[1m", "\033[1;33m", "\033[0m", "\033[1;36m"
 
+global continueLoop, continueSearchMenuLoop
 continueLoop = True
+continueSearchMenuLoop = True
 
 commands = [
     ['help', f'Mostrar la descripción de comandos disponibles junto a un ejemplo de uso. ________ {inputText}"help"{resetText}'],
@@ -66,13 +68,14 @@ def detectCommand(userCommand, optionalParameter=None): #Enviar a función a par
             int(userCommand[0])
         except:
             if 'search' in userCommand:
+                continueSearchMenuLoop = True
                 return True, userCommand
             else:
                 exec(f"{userCommand[0]}({userCommand}, {optionalParameter})")
-                return None
+                return False, userCommand
         fileIndexAccess(userCommand, optionalParameter)
     else:
-        return None
+        return False, None
 
 def fileIndexAccess(userCommand, indexedItemsList=None, functionCalled=None): #usar número de índice para acceder
     if indexedItemsList is None:
@@ -105,7 +108,10 @@ def help(userCommand, optionalParameter=None): #mostrar una descripción de los 
     input("\nPresione cualquier botón para volver a la visualización del directorio actual . . . ")
 
 def exit(userCommand, optionalParameter=None):
-    continueLoop = False
+    if optionalParameter is None:
+        continueLoop = False
+    else:
+        continueSearchMenuLoop = False
 
 def path(userCommand, optionalParameter=None): #Cambiar el directorio
     if len(userCommand) > 2 and len(userCommand) < 1:
@@ -150,13 +156,13 @@ def rename(userCommand, optionalParameter=None): # renombrar archivos en directo
     except:
         input(f"{errorText}No ha sido posible llevar a cabo el comando porque alguno de los parámetros ingresados no es válido")
 
-
 def search(userCommand, optionalParameter=None):
     if len(userCommand) < 2 or len(userCommand) > 2:
         input("El comando 'search' requiere un parámetro conteniendo el filtro de búsqueda")
         return None
 
-    contineSearchMenuLoop = True
+    
+    continueSearchMenuLoop = True
     matches = []
     itemsRecorridos = 0
 
