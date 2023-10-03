@@ -189,9 +189,7 @@ def search(userCommand, optionalParameter=None):
 
     return matches
 
-
 def create(userCommand, optionalParameter=None):
-    input(f'{userCommand} {len(userCommand)}')
     if len(userCommand) < 3 or len(userCommand) > 3:
         input("el comando create requiere dos parámetros: uno para especificar el tipo de creación y otro para el nombre de esta.")
         return ""
