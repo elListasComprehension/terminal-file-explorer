@@ -1,23 +1,23 @@
 import os, functionModule as func
-isSearching = False
+
 def main():
-    while func.continueLoop:
+    searching = None
+    while func.continueMainLoop:
         os.system('cls')
-        contextoActual = os.listdir(os.getcwd())
-        func.showDirectoryContent(contextoActual)
-        isSearching, userInput = func.detectCommand(func.takeUserInput())
-        if isSearching:
-            func.continueSearchMenuLoop = True
-            while func.continueSearchMenuLoop:
-                os.system('cls')
-                resultadosSearch = func.search(userInput)
-                if resultadosSearch == []:
-                    input(f'{func.negritaText} No se encontraron archivos o directorios que contengan el filtro de búsqueda.{func.resetText}\n\n Presione cualquier botón para continuar . . . ')
-                    func.continueSearchMenuLoop = False
-                else:
-                    contextoActual = resultadosSearch
-                    func.showDirectoryContent(contextoActual, f"\n\n('{func.inputText}exit{func.resetText}' para salir del menú de resultados) Actualmente mostrando la dirección o las direcciones de archivos o directorios coincidentes ':\n\n")
-                    func.detectCommand(func.takeUserInput(resultadosSearch))
+        
+        if not searching:
+            upperMesseage = f'{func.negritaText}Current directory is: {os.getcwd()}\n{func.resetText}'
+            contextoActual = os.listdir(os.getcwd())
+        
+        func.showDirectoryContent(contextoActual, upperMesseage)
+        searching = func.detectCommand(func.takeUserInput(contextoActual), searching)
+        
+        if searching:
+            upperMesseage = f'\n\n("{func.inputText}exit{func.resetText}" para salir del menú de resultados) Actualmente mostrando la dirección o las direcciones de archivos o directorios coincidentes:\n\n'
+            contextoActual = func.search(searching)
+            if contextoActual == []:
+                searching = None
+                input(f'{func.negritaText} No se encontraron archivos o directorios que contengan el filtro de búsqueda.{func.resetText}\n\n Presione cualquier botón para continuar . . . ')
 
 if __name__ == '__main__':
     main()

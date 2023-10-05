@@ -1,10 +1,6 @@
 import os, shutil, concurrent.futures, main
 
-errorText, negritaText, inputText, resetText, colorCeleste = '\033[91;4m', '\033[1m', '\033[1;33m', '\033[0m', '\033[1;36m'
-
-global continueLoop, continueSearchMenuLoop
-continueLoop = True
-continueSearchMenuLoop = True
+errorText, negritaText, inputText, resetText, colorCeleste, continueMainLoop = '\033[91;4m', '\033[1m', '\033[1;33m', '\033[0m', '\033[1;36m', True
 
 commands = [
     ['help', f'Mostrar la descripción de comandos disponibles junto a un ejemplo de uso. ________ {inputText}"help"{resetText}'],
@@ -19,32 +15,23 @@ commands = [
     ['exit', f'Salir del programa. ______________________________________________________________ {inputText}"exit"{resetText}']
 ]
 
-def showDirectoryContent(itemsList, optionalParameter=None): #muestra en un formato de lista con índices el contenido del directorio o lista que se le pase comoparámetro 
-    if optionalParameter is None:
-        print(f'{negritaText}Current directory is: {os.getcwd()}\n{resetText}')
-    else:
-        print(optionalParameter)
+
+def showDirectoryContent(itemsList, upperMesseage): #muestra en un formato de lista con índices el contenido del directorio o lista que se le pase comoparámetro 
+    print(upperMesseage)
     try:
-        if itemsList == os.listdir(os.getcwd()):
-            for i, item in enumerate(itemsList):
-                if os.path.isdir(os.path.join(os.getcwd(), item)):
-                    print(f'    {i} - {colorCeleste}[dir]{resetText} {item}')
-                else:
-                    print(f'    {i} - {inputText}[file]{resetText} {item}')
-        else:
-            for i, item in enumerate(itemsList):
-                if os.path.isdir(item):
-                    print(f'    {i} - {colorCeleste}[dir]{resetText} {item}')
-                else:
-                    print(f'    {i} - {inputText}[file]{resetText} {item}')
+        for i, item in enumerate(itemsList):
+            if os.path.isdir([os.path.join(os.getcwd(), item) if itemsList is os.listdir(os.getcwd()) else item][0]):
+                print(f'    {i} - {colorCeleste}[dir]{resetText} {item}')
+            else:
+                print(f'    {i} - {inputText}[file]{resetText} {item}')
     except:
         input(f'{errorText} Acceso denegado a directorio. Pruebe aumentando los permisos con los que el programa corre . . . {resetText}')
 
-def takeUserInput(indexedItemsList=None): # toma el input del usuario y le hace un filtrado inicial
-    if indexedItemsList is None:
-        indexedItemsList = os.listdir(os.getcwd())
-    returnInput = str(input(f'{inputText}\n >>> {resetText}'))
+
+def takeUserInput(contextList):
+    returnInput = str(input(f'{inputText}\n >> {resetText}'))
     if returnInput is not None:
+        
         returnInput = returnInput.split(' ')
         if returnInput[0] not in [item[0] for item in commands]:
             try:
@@ -52,43 +39,44 @@ def takeUserInput(indexedItemsList=None): # toma el input del usuario y le hace 
             except:
                 input(f'{errorText}"{returnInput[0]}" no se reconoce como un comando interno o externo, programa o archivo por lotes ejecutable . . . {resetText}')
                 return None
-            if int(returnInput[0]) < 0 or int(returnInput[0]) > (len(indexedItemsList)) - 1:
-                input(f'{errorText}Número de índice ingresado fuera de rango en el contexto de directorio actual . . . {resetText}')
+            if int(returnInput[0]) < 0 or int(returnInput[0]) > (len(contextList)) - 1:
+                input(f'{errorText}Número de índice ingresado fuera de rango en el contexto de contexto de lista actual . . . {resetText}')
                 return None
             else:
                 return returnInput
         else:
             return returnInput
+        
     else:
         return None
 
-def detectCommand(userCommand, optionalParameter=None): #Enviar a función a partir de comandos
-    if userCommand is not None:
+
+def detectCommand(userCommand, isSearching): #Enviar a función a partir de comandos
+    if userCommand is None:
+        return None
+    else:
         try:
             int(userCommand[0])
         except:
-            if main.isSearching:
-                if 'search' in userCommand[0] or 'path' in userCommand[0] or 'create' in userCommand[0] or 'back' in userCommand[0]:
-                    input(f'{errorText}El comando ingresado no tiene un resultado o acción válida en el contexto del listado actual . . . {resetText}')
-                else:
-                    if 'exit' in userCommand[0]:
-                        continueSearchMenuLoop = False
+            if isSearching:
+                if userCommand[0] == 'search' or userCommand[0] == 'path' or userCommand[0] == 'create' or userCommand[0] == 'back' or userCommand[0] == 'exit':
+                    if userCommand[0] == 'exit':
+                        main.searching = None
                     else:
-                        exec(f'{userCommand[0]}({userCommand}, {optionalParameter})')
-                return None
-            else:
-                if 'search' in userCommand:
-                    continueSearchMenuLoop = True
-                    return True, userCommand
+                        input(f'{errorText}El comando ingresado no tiene un resultado o acción válida en el contexto de listado actual . . . {resetText}')
                 else:
-                    exec(f'{userCommand[0]}({userCommand}, {optionalParameter})')
-                    return False, userCommand
-        fileIndexAccess(userCommand)
-        return False, userCommand
-    else:
-        return False, None
+                    exec(f'{userCommand[0]}({userCommand})')
+            else:
+                if userCommand[0] == 'search':
+                    return userCommand
+                else:
+                    exec(f'{userCommand[0]}({userCommand})')
+                    return None
+            
+        indexAccess(userCommand)
 
-def fileIndexAccess(userCommand, indexedItemsList=None, functionCalled=None): #usar número de índice para acceder
+
+def indexAccess(userCommand, indexedItemsList=None, functionCalled=None): #usar número de índice para acceder
     if functionCalled is not None:
         if int(userCommand) < 0 or int(userCommand) > (len(indexedItemsList)) - 1:
             input('error')
@@ -110,15 +98,20 @@ def fileIndexAccess(userCommand, indexedItemsList=None, functionCalled=None): #u
             except:
                 input(f'{errorText} Acceso denegado a directorio. Pruebe aumentando los permisos con los que el programa corre . . . {resetText}')
 
+
+
 def help(userCommand, optionalParameter=None): #mostrar una descripción de los comandos que inluye el programa
     os.system('cls')
     print(f'{negritaText}\nAyuda de comandos:\n{negritaText}')
     [print(f'{negritaText}{item[0]} - {negritaText}{item[1]}') for item in commands]
     input('\nPresione cualquier botón para volver a la visualización del directorio actual . . . ')
 
+
+
 def exit(userCommand, optionalParameter=None):
-    if optionalParameter is None:
-        continueLoop = False
+    continueLoop = False
+
+
 
 def path(userCommand, optionalParameter=None): #Cambiar el directorio
     if len(userCommand) > 2 and len(userCommand) < 1:
