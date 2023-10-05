@@ -68,12 +68,13 @@ def detectCommand(userCommand, isSearching, contextoDeLista):
                         return None
                 else:
                     exec(f'{userCommand[0]}({userCommand})')
+                    return None
             else:
                 if userCommand[0] == 'search':
                     return userCommand
                 else:
                     exec(f'{userCommand[0]}({userCommand})')
-            
+                    return None
         indexAccess(userCommand, contextoDeLista)
         
     else:
