@@ -68,13 +68,14 @@ def detectCommand(userCommand, optionalParameter=None): #Enviar a función a par
             int(userCommand[0])
         except:
             if main.isSearching:
-                if userCommand[0] == 'search' or userCommand[0] == 'path' or userCommand[0] == 'create' or userCommand[0] == 'back' or userCommand[0]:
+                if 'search' in userCommand[0] or 'path' in userCommand[0] or 'create' in userCommand[0] or 'back' in userCommand[0]:
                     input(f'{errorText}El comando ingresado no tiene un resultado o acción válida en el contexto del listado actual . . . {resetText}')
                 else:
-                    if userCommand[0] == 'exit':
+                    if 'exit' in userCommand[0]:
                         continueSearchMenuLoop = False
                     else:
                         exec(f'{userCommand[0]}({userCommand}, {optionalParameter})')
+                return None
             else:
                 if 'search' in userCommand:
                     continueSearchMenuLoop = True
@@ -82,14 +83,12 @@ def detectCommand(userCommand, optionalParameter=None): #Enviar a función a par
                 else:
                     exec(f'{userCommand[0]}({userCommand}, {optionalParameter})')
                     return False, userCommand
-        fileIndexAccess(userCommand, optionalParameter)
+        fileIndexAccess(userCommand)
         return False, userCommand
     else:
         return False, None
 
 def fileIndexAccess(userCommand, indexedItemsList=None, functionCalled=None): #usar número de índice para acceder
-    if indexedItemsList is None:
-        indexedItemsList = os.listdir(os.getcwd())
     if functionCalled is not None:
         if int(userCommand) < 0 or int(userCommand) > (len(indexedItemsList)) - 1:
             input('error')
@@ -97,17 +96,17 @@ def fileIndexAccess(userCommand, indexedItemsList=None, functionCalled=None): #u
         else:
             return indexedItemsList[int(userCommand)]
     else:
-        if os.path.isfile(os.path.join(os.getcwd(), indexedItemsList[int(userCommand[0])])):
+        if os.path.isfile(os.path.join(os.getcwd(), main.main.contextoActual[int(userCommand[0])])):
             try:
-                if indexedItemsList == os.listdir(os.getcwd()):
-                    os.startfile(f'{os.path.join(os.getcwd(), indexedItemsList[int(userCommand[0])])}')
+                if main.main.contextoActual == os.listdir(os.getcwd()):
+                    os.startfile(f'{os.path.join(os.getcwd(), main.main.contextoActual[int(userCommand[0])])}')
                 else:
-                    os.startfile(indexedItemsList[int(userCommand[0])])
+                    os.startfile(main.main.contextoActual[int(userCommand[0])])
             except:
                 input(f'{errorText} No se logró ejecutar el programa seleccionado . . . {resetText}')
         else:
             try:
-                os.chdir(indexedItemsList[int(userCommand[0])])
+                os.chdir(main.main.contextoActual[int(userCommand[0])])
             except:
                 input(f'{errorText} Acceso denegado a directorio. Pruebe aumentando los permisos con los que el programa corre . . . {resetText}')
 
@@ -144,7 +143,6 @@ def back(userCommand, optionalParameter=None): #ir al directorio previo
             os.chdir(optionalParameter)
         except:
             input(f'{errorText}No se pudo cambiar al directorio raíz por un error interno o porque ese no se encontró . . . {resetText}')
-
 
 def rename(userCommand, optionalParameter=None): # renombrar archivos en directorio actual
     if len(userCommand) < 3 or len(userCommand) > 3:
