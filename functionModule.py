@@ -1,5 +1,6 @@
 import os, shutil, concurrent.futures, main
 
+global continueMainLoop
 errorText, negritaText, inputText, resetText, colorCeleste, continueMainLoop = '\033[91;4m', '\033[1m', '\033[1;33m', '\033[0m', '\033[1;36m', True
 
 commands = [
@@ -16,14 +17,14 @@ commands = [
 ]
 
 
-def showDirectoryContent(itemsList, upperMesseage): #muestra en un formato de lista con índices el contenido del directorio o lista que se le pase comoparámetro 
+def showDirectoryContent(itemsList, upperMesseage, simpleView):
     print(upperMesseage)
     try:
         for i, item in enumerate(itemsList):
-            if os.path.isdir([os.path.join(os.getcwd(), item) if itemsList is os.listdir(os.getcwd()) else item][0]):
-                print(f'    {i} - {colorCeleste}[dir]{resetText} {item}')
+            if os.path.isdir(item):
+                print([f'    {i} - {colorCeleste}[dir]{resetText} {(item.split(os.sep))[-1]}' if simpleView else f'    {i} - {colorCeleste}[dir]{resetText} {item}'][0])
             else:
-                print(f'    {i} - {inputText}[file]{resetText} {item}')
+                print([f'    {i} - {inputText}[file]{resetText} {(item.split(os.sep))[-1]}' if simpleView else f'    {i} - {inputText}[file]{resetText} {item}'][0])
     except:
         input(f'{errorText} Acceso denegado a directorio. Pruebe aumentando los permisos con los que el programa corre . . . {resetText}')
 
@@ -51,19 +52,20 @@ def takeUserInput(contextList):
         return None
 
 
-def detectCommand(userCommand, isSearching): #Enviar a función a partir de comandos
-    if userCommand is None:
-        return None
-    else:
+def detectCommand(userCommand, isSearching, contextoDeLista):
+    if userCommand is not None:
+        
         try:
             int(userCommand[0])
         except:
             if isSearching:
                 if userCommand[0] == 'search' or userCommand[0] == 'path' or userCommand[0] == 'create' or userCommand[0] == 'back' or userCommand[0] == 'exit':
                     if userCommand[0] == 'exit':
-                        main.searching = None
+                        main.main.searching = None
+                        return None
                     else:
                         input(f'{errorText}El comando ingresado no tiene un resultado o acción válida en el contexto de listado actual . . . {resetText}')
+                        return None
                 else:
                     exec(f'{userCommand[0]}({userCommand})')
             else:
@@ -71,100 +73,89 @@ def detectCommand(userCommand, isSearching): #Enviar a función a partir de coma
                     return userCommand
                 else:
                     exec(f'{userCommand[0]}({userCommand})')
-                    return None
             
-        indexAccess(userCommand)
-
-
-def indexAccess(userCommand, indexedItemsList=None, functionCalled=None): #usar número de índice para acceder
-    if functionCalled is not None:
-        if int(userCommand) < 0 or int(userCommand) > (len(indexedItemsList)) - 1:
-            input('error')
-            return ''
-        else:
-            return indexedItemsList[int(userCommand)]
+        indexAccess(userCommand, contextoDeLista)
+        
     else:
-        if os.path.isfile(os.path.join(os.getcwd(), main.main.contextoActual[int(userCommand[0])])):
+        return None
+
+
+def indexAccess(userCommand, contextoDeLista, functionCalled=None):
+    if functionCalled is not None:
+        if int(userCommand) < 0 or int(userCommand) > (len(contextoDeLista)) - 1:
+            input(f'{errorText} No se logró otorgar path a partir de acceso desde función . . . {resetText}')
+            return None
+        else:
+            return contextoDeLista[int(userCommand)]
+        
+    else:
+        if os.path.isfile(contextoDeLista[int(userCommand[0])]):
             try:
-                if main.main.contextoActual == os.listdir(os.getcwd()):
-                    os.startfile(f'{os.path.join(os.getcwd(), main.main.contextoActual[int(userCommand[0])])}')
-                else:
-                    os.startfile(main.main.contextoActual[int(userCommand[0])])
+                os.startfile(contextoDeLista[int(userCommand[0])])
             except:
                 input(f'{errorText} No se logró ejecutar el programa seleccionado . . . {resetText}')
         else:
             try:
-                os.chdir(main.main.contextoActual[int(userCommand[0])])
+                os.chdir(contextoDeLista[int(userCommand[0])])
             except:
                 input(f'{errorText} Acceso denegado a directorio. Pruebe aumentando los permisos con los que el programa corre . . . {resetText}')
 
 
 
-def help(userCommand, optionalParameter=None): #mostrar una descripción de los comandos que inluye el programa
+def help(userCommand, optionalParameter=None):
     os.system('cls')
     print(f'{negritaText}\nAyuda de comandos:\n{negritaText}')
     [print(f'{negritaText}{item[0]} - {negritaText}{item[1]}') for item in commands]
     input('\nPresione cualquier botón para volver a la visualización del directorio actual . . . ')
 
 
-
 def exit(userCommand, optionalParameter=None):
-    continueLoop = False
+    continueMainLoop = False
 
 
-
-def path(userCommand, optionalParameter=None): #Cambiar el directorio
+def path(userCommand):
     if len(userCommand) > 2 and len(userCommand) < 1:
         input(f'{errorText}El comando "path" pide un solo parámetro para indicar la dirección de destino . . . {resetText}')
-    else:
-        try:
-            os.chdir(userCommand[1])
-        except:
-            input(f'{errorText}Indicador de dirección especificada en parámetro no válido o no encontrado en contexto de directorio actual . . . {resetText}')
+        return None
+    try:
+        os.chdir(userCommand[1])
+    except:
+        input(f'{errorText}Indicador de dirección especificada en parámetro no válido o no encontrado en contexto de directorio actual . . . {resetText}')
 
-def back(userCommand, optionalParameter=None): #ir al directorio previo
+
+def back(userCommand, optionalParameter=None):
     if len(userCommand) > 1:
         input(f'{errorText}El comando "back" no requiere ni pide parámetros . . . {resetText}')
-        return
-    if optionalParameter is None:
-        try:
-            os.chdir('..')
-        except:
-            input(f'{errorText}No se pudo cambiar al directorio raíz por un error interno o porque ese no se encontró . . . {resetText}')
-    else:
-        try:
-            os.chdir(optionalParameter)
-        except:
-            input(f'{errorText}No se pudo cambiar al directorio raíz por un error interno o porque ese no se encontró . . . {resetText}')
+        return None
+    
+    try:
+        os.chdir('..')
+    except:
+        input(f'{errorText}No se pudo cambiar al directorio raíz por un error interno o porque ese no se encontró . . . {resetText}')
 
-def rename(userCommand, optionalParameter=None): # renombrar archivos en directorio actual
+
+def rename(userCommand):
     if len(userCommand) < 3 or len(userCommand) > 3:
         input(f'{errorText}El comando "rename" requiere para ser ejecutado un indicador de item requerido para el cambio de nombre y un nombre nuevo de este item . . . {resetText}')
-        return ''
-    exception = None
+        return None
+    
     try:
-        int(userCommand[1])
+        oldPath = indexAccess(userCommand[1], main.contextoAcual, True)
     except:
-        exception = True
-        oldPath = f'{os.getcwd()}\{os.listdir(os.getcwd())[int(userCommand[1])]}'
-    if exception is None:
-        oldPath = fileIndexAccess(userCommand[1], None, True)
+        oldPath = f'{os.getcwd()}\{os.listdir(os.getcwd())[int(userCommand[1])]}'        
     newPath = f'{os.getcwd()}\{userCommand[2]}'
     try:
         os.rename(oldPath, newPath)
     except:
         input(f'{errorText}No ha sido posible llevar a cabo el comando porque alguno de los parámetros ingresados no es válido{resetText}')
 
-def search(userCommand, optionalParameter=None):
+
+def search(userCommand):
     if len(userCommand) < 2 or len(userCommand) > 2:
         input(f'{errorText}El comando "search" requiere un parámetro correspondiente al filtro de buúsqueda con el que tengan que coincidir los items para ser mostrados . . . {resetText}')
         return None
-
     
-    continueSearchMenuLoop = True
     matches = []
-    itemsRecorridos = 0
-
     def search_in_directory(parent, search_term):
         local_matches = []
         for root, dirs, files in os.walk(parent):
@@ -180,15 +171,13 @@ def search(userCommand, optionalParameter=None):
 
     with concurrent.futures.ThreadPoolExecutor() as executor:
         for parent, _, _ in os.walk(os.getcwd()):
-            itemsRecorridos += 1
-            os.system('cls')
-            print(f'Buscando en {itemsRecorridos} items . . . ')
             future = executor.submit(search_in_directory, parent, userCommand[1])
             matches.extend(future.result())
 
     return matches
 
-def create(userCommand, optionalParameter=None):
+
+def create(userCommand):
     if len(userCommand) < 3 or len(userCommand) > 3:
         input(f'{errorText}El comando "create" requiere dos parámetros: uno para indicar el tipo de creación (file o dir) y otro para el nombre de esta . . . {resetText}')
         return ''
@@ -202,39 +191,33 @@ def create(userCommand, optionalParameter=None):
             try:
                 open(userCommand[2], 'x')
             except:
-                input('El archivo no pudo ser creado')
+                input(f'{errorText}El archivo no pudo ser creado. Podrían no ser suficientes los permisos de arministrador requeridos para accionar de esta manera en este directorio . . . {resetText}')
         else:
             input(f'{errorText}El segundo parámetro correspondiente al tipo de creación ingresado no es válido. Debe ser "file" o "dir" . . . {resetText}')
 
-def delete(userCommand, optionalParameter=None):
+
+def delete(userCommand):
     exception = None
     try:
-        int(userCommand[1])
+        deletingPath = indexAccess(userCommand[1], main.contextoActual, True)
     except:
-        exception = True
         deletingPath = userCommand[1]
-    if exception is None:
-        deletingPath = fileIndexAccess(userCommand[1], None, True)
     try:
         os.remove(deletingPath)
     except:
         input(f'{errorText}El item indicado no pudo ser eliminado debido a que no se encontró el elemento o los permisos necesarios para realizar esta acción no alcanzan . . . {resetText}')
     
 
-def move(userCommand, optionalParameter=None):
-    input(f'{os.path.join(os.getcwd(), os.listdir(os.getcwd())[userCommand[1]])}, {userCommand[2]}')
+def move(userCommand):
     try:
-        int(userCommand[1])
+        itemToMove = indexAccess(userCommand[1], main.contextoActual, True)
     except:
-        try:
-            shutil.move(userCommand[1], userCommand[2])
-            return None
-        except:
-            input(f'{errorText}Los directorios especificados para la acción no son válidos . . . {resetText}')
-            return None
+        itemToMove = userCommand[1]
     try:
-        shutil.move(os.path.join(os.getcwd(), os.listdir(os.getcwd())[userCommand[1]]), userCommand[2])
-        return None 
+        targetDirectory = indexAccess(userCommand[2], main.contextoActual, True)
     except:
-        input(f'{errorText}El índice ingresado para indicar la dirección de origen no es válido . . . {resetText}')
-        return None
+        targetDirectory = userCommand[2]
+    try:
+        shutil.move(itemToMove, targetDirectory)
+    except:
+        input(f'{errorText}Los directorios o indices especificados para la acción no son válidos . . . {resetText}')
